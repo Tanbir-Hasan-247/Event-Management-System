@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+    <section class="bg-slate-900 p-3 text-white min-h-screen">
+        <div class="container mx-auto">
+            <h1 class="text-3xl font-bold mb-6">Organizer Dashboard</h1>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <a href="?filter=all" class="w-full text-left hover:scale-[1.02] p-4" type="submit">
+            <div class="bg-slate-800 p-4 rounded-xl shadow-sm">
+              <h3 class="text-xl font-bold mb-4">Total Events</h3>
+              <div class="flex items-center mt-2 justify-between">
+                <span class="text-3xl font-bold">{{ total_events }}</span>
+                <span class="text-gray-400"> events</span>
+              </div>
+            </div>
+          </a>
+
+          <a href="?filter=participants" class="w-full text-left hover:scale-[1.02] p-4" type="submit">
+            <div class="bg-slate-800 p-4 rounded-xl shadow-sm">
+              <h3 class="text-xl font-bold mb-4">Total Participants</h3>
+              <div class="flex items-center mt-2 justify-between">
+                <span class="text-3xl font-bold">{{ total_participants }}</span>
+                <span class="text-gray-400"> participants</span>
+              </div>
+            </div>
+          </a>
+
+          <a href="?filter=upcoming" class="w-full text-left hover:scale-[1.02] p-4" type="submit">
+            <div class="bg-slate-800 p-4 rounded-xl shadow-sm">
+              <h3 class="text-xl font-bold mb-4">Upcoming Events</h3>
+              <div class="flex items-center mt-2 justify-between">
+                <span class="text-3xl font-bold">{{ upcoming_events_count }}</span>
+                <span class="text-gray-400"> events</span>
+              </div>
+            </div>
+          </a>
+
+          <a href="?filter=past" class="w-full text-left hover:scale-[1.02] p-4" type="submit">
+            <div class="bg-slate-800 p-4 rounded-xl shadow-sm">
+              <h3 class="text-xl font-bold mb-4">Past Events</h3>
+              <div class="flex items-center mt-2 justify-between">
+                <span class="text-3xl font-bold">{{ past_events_count }}</span>
+                <span class="text-gray-400"> events</span>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="bg-slate-800 p-4 rounded-xl shadow-sm overflow-x-auto">
+                <h3 class="text-xl font-bold mb-4">Todays Events</h3>
+                {% if todays_events %}
+                <table class="min-w-full text-left text-sm">
+                    <thead class="border-b bg-slate-700">
+                        <tr>
+                            <th scope="col" class="px-6 py-3">Event Name</th>
+                            <th scope="col" class="px-6 py-3">Category</th>
+                            <th scope="col" class="px-6 py-3">Date & Time</th>
+                            <th scope="col" class="px-6 py-3">Location</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for event in todays_events %}
+                        <tr class="border-b">
+                            <td class="whitespace-nowrap px-6 py-3 font-medium">{{ event.name }}</td>
+                            <td class="whitespace-nowrap px-6 py-3">{{ event.category.name }}</td>
+                            <td class="whitespace-nowrap px-6 py-3">{{ event.date }} at {{ event.time }}</td>
+                            <td class="whitespace-nowrap px-6 py-3">{{ event.location }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                 {% else %}
+                <div class="py-12 text-center text-slate-500 bg-slate-50 rounded-lg border border-dashed border-slate-300">
+                    No events scheduled for today.
+                </div>
+                {% endif %}
+            </div>
+            <div class="bg-slate-800 p-4 rounded-xl shadow-sm overflow-x-auto">
+                <h3 class="text-xl font-bold mb-4">{{ table_title }}</h3>
+                <table class="min-w-full text-left text-sm">
+                    <thead class="border-b bg-slate-700">
+                        <tr>
+                            <th scope="col" class="px-6 py-3">Event Name</th>
+                            <th scope="col" class="px-6 py-3">Category</th>
+                            <th scope="col" class="px-6 py-3">Date & Time</th>
+                            <th scope="col" class="px-6 py-3">Location</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for event in filtered_events %}
+                        <tr class="border-b">
+                            <td class="whitespace-nowrap px-6 py-3 font-medium">{{ event.name }}</td>
+                            <td class="whitespace-nowrap px-6 py-3">{{ event.category.name }}</td>
+                            <td class="whitespace-nowrap px-6 py-3">{{ event.date }} at {{ event.time }}</td>
+                            <td class="whitespace-nowrap px-6 py-3">{{ event.location }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        </div>
+      </section>
+{% endblock %}
