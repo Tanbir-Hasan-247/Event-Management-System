@@ -37,17 +37,20 @@
             <a href="{% url 'dashboard' %}" class="hover:text-indigo-300 transition">Dashboard</a>
             <a href="{% url 'event_list' %}" class="hover:text-indigo-300 transition">All Events</a>
             <a href="{% url 'category_list' %}" class="hover:text-indigo-300 transition">Categories</a>
-            <a href="{% url 'participant_list' %}" class="hover:text-indigo-300 transition">Participants</a>
+            <a href="#" class="hover:text-indigo-300 transition">Participants</a>
 
-            <div class="relative">
-              <select onchange="if(this.value) window.location.href=this.value"
-                      class="bg-slate-900 border border-slate-700 text-white rounded-lg py-1 px-3 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer">
-                <option value="">ADD+</option>
-                <option value="{% url 'create_event' %}">New Event</option>
-                <option value="{% url 'create_category' %}">New Category</option>
-                <option value="{% url 'create_participant' %}">New Participant</option>
-              </select>
-            </div>
+            
+          <div class="pt-2">
+            {% if user.is_authenticated %}
+            <form method="post" action="{% url 'sign_out' %}">
+              {% csrf_token %}
+              <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">Sign Out</button>
+            </form>
+            {% else %}
+              <a href="{% url 'sign_in' %}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">Sign In</a>
+              <a href="{% url 'sign_up' %}" class="ml-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">Sign Up</a>
+            {% endif %}
+          </div>
           </div>
 
           <div class="lg:hidden flex items-center">
@@ -65,16 +68,12 @@
           <a href="{% url 'dashboard' %}" class="block text-white hover:text-indigo-300 transition">Dashboard</a>
           <a href="{% url 'event_list' %}" class="block text-white hover:text-indigo-300 transition">All Events</a>
           <a href="{% url 'category_list' %}" class="block text-white hover:text-indigo-300 transition">Categories</a>
-          <a href="{% url 'participant_list' %}" class="block text-white hover:text-indigo-300 transition">Participants</a>
+          <a href="#" class="block text-white hover:text-indigo-300 transition">Participants</a>
+          
           
           <div class="pt-2">
-            <select onchange="if(this.value) window.location.href=this.value"
-                    class="bg-slate-900 border border-slate-700 text-white rounded-lg py-2 px-3 w-full font-medium focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer">
-              <option value="">ADD+</option>
-              <option value="{% url 'create_event' %}">New Event</option>
-              <option value="{% url 'create_category' %}">New Category</option>
-              <option value="{% url 'create_participant' %}">New Participant</option>
-            </select>
+            <a href="{% url 'sign_in' %}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">Sign In</a>
+            <a href="{% url 'sign_up' %}" class="ml-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">Sign Up</a>
           </div>
         </div>
       </div>

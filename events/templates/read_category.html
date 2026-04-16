@@ -1,4 +1,4 @@
-{% extends "base.html" %} 
+{% extends layout %} 
 {% load static %}
 {% block title %}Event Categories{% endblock %} 
 {% block content %}
@@ -14,25 +14,18 @@
           <h2 class="text-xl font-bold mb-2 text-cyan-300">
             {{ category.name }}
           </h2>
+          {% if role == "Organizer" or role == "Admin" %}
           <div>
-            <a
-              href="{% url 'update_category' category.id %}"
-              class="text-blue-400 hover:text-blue-300 mr-4"
-            >
+            <a href="{% url 'update_category' category.id %}" 
+            class="text-blue-400 hover:text-blue-300 mr-4">
               <i class="fa-solid fa-pen-to-square"></i>
             </a>
-            <a
-              href="{% url 'delete_category' category.id %}"
-              class="text-red-500 hover:text-red-400"
-              onclick="
-                return confirm(
-                  'Are you sure you want to delete this category?',
-                );
-              "
-            >
+            <a href="{% url 'delete_category' category.id %}" class="text-red-500 hover:text-red-400"
+            onclick="return confirm('Are you sure you want to delete this category?');">
               <i class="fa-solid fa-trash"></i>
             </a>
           </div>
+          {% endif %}
         </div>
         <p class="text-sm text-slate-400 mb-4">{{ category.description }}</p>
         <a

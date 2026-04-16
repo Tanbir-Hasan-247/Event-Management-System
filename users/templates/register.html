@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sign up{% endblock %}
+
+{% block content %}
+    <section class="bg-slate-900 min-h-screen flex items-center justify-center font-sans p-4 text-slate-200">
+        <div class="w-full max-w-lg bg-slate-800 shadow-2xl rounded-3xl p-8 border border-slate-700">
+            <h2 class="text-3xl font-bold text-center mb-8 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">
+                Create New Event
+            </h2>
+            <form method="POST" class="space-y-6">
+                {% csrf_token %}
+                <div class="space-y-2">
+                    <label class="block text-sm font-semibold text-slate-300 ml-1">{{ form.username.label }}</label>
+                    {{ form.username }}
+                    {% for error in form.username.errors %}
+        <p class="text-red-400 text-sm">{{ error }}</p>
+    {% endfor %}
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-sm font-semibold text-slate-300 ml-1">{{ form.first_name.label }}</label>
+                    {{ form.first_name }}
+                    {% for error in form.first_name.errors %}
+        <p class="text-red-400 text-sm">{{ error }}</p>
+    {% endfor %}
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-sm font-semibold text-slate-300 ml-1">{{ form.last_name.label }}</label>
+                    {{ form.last_name }}
+                    {% for error in form.last_name.errors %}
+        <p class="text-red-400 text-sm">{{ error }}</p>
+    {% endfor %}
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-sm font-semibold text-slate-300 ml-1">{{ form.email.label }}</label>
+                    {{ form.email }}
+                    {% for error in form.email.errors %}
+        <p class="text-red-400 text-sm">{{ error }}</p>
+    {% endfor %}
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-sm font-semibold text-slate-300 ml-1">{{ form.password1.label }}</label>
+                    {{ form.password1 }}
+                    {% for error in form.password1.errors %}
+        <p class="text-red-400 text-sm">{{ error }}</p>
+    {% endfor %}
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-sm font-semibold text-slate-300 ml-1">{{ form.confirm_password.label }}</label>
+                    {{ form.confirm_password }}
+                    {% for error in form.confirm_password.errors %}
+        <p class="text-red-400 text-sm">{{ error }}</p>
+    {% endfor %}
+                </div>
+                <button type="submit" class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg transform hover:-translate-y-1 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/50">
+                    Sign Up
+                </button>
+            </form>
+            <div class="mt-6 text-center">
+                <a href="#" class="text-sm text-slate-400 hover:text-blue-400 transition-colors duration=200 font-medium">
+                    &larr; Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </section>
+{% endblock %}

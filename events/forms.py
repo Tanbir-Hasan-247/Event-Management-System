@@ -1,5 +1,6 @@
-from .models import Event, Participant, Category
+from .models import Event, Category
 from django import forms
+from django.contrib.auth.models import Permission, Group
 
 class StyledFormMixin:
     """Form fields এ premium glassmorphism styling add করার জন্য Mixin।"""
@@ -35,7 +36,7 @@ class StyledFormMixin:
 class EventForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = Event
-        fields = ['name', 'description', 'date', 'time', 'location', 'category']
+        fields = ['name', 'description', 'date', 'time', 'location', 'category', 'image']
         widgets = {
             'date': forms.DateInput(attrs={
                 'type': 'date',
@@ -45,15 +46,6 @@ class EventForm(StyledFormMixin, forms.ModelForm):
                 'type': 'time',
                 'placeholder': 'Select time...'
             }),
-        }
-
-class ParticipantForm(StyledFormMixin, forms.ModelForm):
-    class Meta:
-        model = Participant
-        fields = ['name', 'email', 'event']
-        widgets = {
-            
-            'event': forms.CheckboxSelectMultiple(),
         }
         
 
@@ -70,3 +62,16 @@ class CategoryForm(StyledFormMixin, forms.ModelForm):
                 'rows': 4
             }),
         }
+
+
+class GroupForm(StyledFormMixin, forms.ModelForm):
+    permissions = forms.ModelMultipleChoiceField(
+        queryset=Permission.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="Permissions"
+    )
+
+    class Meta:
+        model = Group
+        fields = ['name', 'permissions']

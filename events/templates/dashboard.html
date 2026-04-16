@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends layout %}
 {% load static %}
 
 {% block title %}Dashboard{% endblock %}
@@ -18,12 +18,12 @@
             </div>
           </a>
 
-          <a href="?filter=participants" class="w-full text-left hover:scale-[1.02] p-4" type="submit">
+          <a href="?filter=rsvp" class="w-full text-left hover:scale-[1.02] p-4" type="submit">
             <div class="bg-slate-800 p-4 rounded-xl shadow-sm">
-              <h3 class="text-xl font-bold mb-4">Total Participants</h3>
+              <h3 class="text-xl font-bold mb-4">Total RSVPS</h3>
               <div class="flex items-center mt-2 justify-between">
-                <span class="text-3xl font-bold">{{ total_participants }}</span>
-                <span class="text-gray-400"> participants</span>
+                <span class="text-3xl font-bold">{{ rsvp_events_count }}</span>
+                <span class="text-gray-400"> rsvps</span>
               </div>
             </div>
           </a>
