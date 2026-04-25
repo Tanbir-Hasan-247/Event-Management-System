@@ -3,6 +3,7 @@ from urllib import request
 from django.contrib import messages
 from django.shortcuts import redirect, render
 from django.http import HttpResponse
+from django.urls import reverse_lazy
 from .models import Event, Category
 from .forms import EventForm, CategoryForm, GroupForm
 from django.db.models import Q
@@ -10,7 +11,8 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.models import Group, User
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required, user_passes_test
-
+from django.views.generic import CreateView, UpdateView, DeleteView, ListView, DetailView, View
+from django.contrib.auth.mixins import UserPassesTestMixin
 def home(request):
     return render(request, "home.html")
 
@@ -39,120 +41,226 @@ def check_role(user):
         return "Participant"
 
 # Create Operations
-@user_passes_test(lambda u: is_admin(u) or is_organizer(u), login_url='home')
-def create_event(request):
-    event_form = EventForm()
+# @user_passes_test(lambda u: is_admin(u) or is_organizer(u), login_url='home')
+# def create_event(request):
+#     event_form = EventForm()
     
-    if request.method == "POST":
-        event_form = EventForm(request.POST,request.FILES)
+#     if request.method == "POST":
+#         event_form = EventForm(request.POST,request.FILES)
         
-        if event_form.is_valid():
-            event_form.save()
-            messages.success(request, "Event created successfully!")
-            return redirect("create_event")
-    context = {
-        "event_form": event_form,
-        "layout": layout(request.user),
-        "role": check_role(request.user),
-    }
-    return render(request, "create_event.html", context)
+#         if event_form.is_valid():
+#             event_form.save()
+#             messages.success(request, "Event created successfully!")
+#             return redirect("create_event")
+#     context = {
+#         "event_form": event_form,
+#         "layout": layout(request.user),
+#         "role": check_role(request.user),
+#     }
+#     return render(request, "create_event.html", context)
 
-@user_passes_test(lambda u: is_admin(u) or is_organizer(u), login_url='home')
-def create_category(request):
-    category_form = CategoryForm()
+class CreateEvent(UserPassesTestMixin, CreateView):
+    model = Event
+    form_class = EventForm
+    template_name = "create_event.html"
+    success_url = reverse_lazy("event_list")
     
-    if request.method == "POST":
-        category_form = CategoryForm(request.POST)
+    def test_func(self):
+        return is_admin(self.request.user) or is_organizer(self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["event_form"] = context.get("form")
+        context["layout"] = layout(self.request.user)
+        context["role"] = check_role(self.request.user)
+        return context
+
+# @user_passes_test(lambda u: is_admin(u) or is_organizer(u), login_url='home')
+# def create_category(request):
+#     category_form = CategoryForm()
+    
+#     if request.method == "POST":
+#         category_form = CategoryForm(request.POST)
         
-        if category_form.is_valid():
-            category_form.save()
-            messages.success(request, "Category created successfully!")
-            return redirect("create_category")
-    context = {
-        "category_form": category_form,
-        "layout": layout(request.user),
-        "role": check_role(request.user),
-    }
-    return render(request, "create_category.html", context)
+#         if category_form.is_valid():
+#             category_form.save()
+#             messages.success(request, "Category created successfully!")
+#             return redirect("create_category")
+#     context = {
+#         "category_form": category_form,
+#         "layout": layout(request.user),
+#         "role": check_role(request.user),
+#     }
+#     return render(request, "create_category.html", context)
+
+class CreateCategory(UserPassesTestMixin, CreateView):
+    model = Category
+    form_class = CategoryForm
+    template_name = "create_category.html"
+    success_url = reverse_lazy("category_list")
+    
+    def test_func(self):
+        return is_admin(self.request.user) or is_organizer(self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["category_form"] = context.get("form")
+        context["layout"] = layout(self.request.user)
+        context["role"] = check_role(self.request.user)
+        return context
 
 
 #Update Operations
-@user_passes_test(lambda u: is_admin(u) or is_organizer(u), login_url='home')
-def update_event(request, event_id):
-    event = Event.objects.get(id=event_id)
-    event_form = EventForm(instance=event)
+# @user_passes_test(lambda u: is_admin(u) or is_organizer(u), login_url='home')
+# def update_event(request, event_id):
+#     event = Event.objects.get(id=event_id)
+#     event_form = EventForm(instance=event)
     
-    if request.method == "POST":
-        event_form = EventForm(request.POST, instance=event)
+#     if request.method == "POST":
+#         event_form = EventForm(request.POST, instance=event)
         
-        if event_form.is_valid():
-            event_form.save()
-            messages.success(request, "Event updated successfully!")
-            return redirect("home")
-    context = {
-        "event_form": event_form,
-        "layout": layout(request.user),
-        "role": check_role(request.user),
-    }
-    return render(request, "create_event.html", context)
+#         if event_form.is_valid():
+#             event_form.save()
+#             messages.success(request, "Event updated successfully!")
+#             return redirect("home")
+#     context = {
+#         "event_form": event_form,
+#         "layout": layout(request.user),
+#         "role": check_role(request.user),
+#     }
+#     return render(request, "create_event.html", context)
 
-@user_passes_test(lambda u: is_admin(u) or is_organizer(u), login_url='home')
-def update_category(request, category_id):
-    category = Category.objects.get(id=category_id)
-    category_form = CategoryForm(instance=category)
+class UpdateEvent(UserPassesTestMixin, UpdateView):
+    model = Event
+    pk_url_kwarg = "event_id"
+    form_class = EventForm
+    template_name = "create_event.html"
+    success_url = reverse_lazy("event_list")
     
-    if request.method == "POST":
-        category_form = CategoryForm(request.POST, instance=category)
+    def test_func(self):
+        return is_admin(self.request.user) or is_organizer(self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["event_form"] = context.get("form")
+        context["layout"] = layout(self.request.user)
+        context["role"] = check_role(self.request.user)
+        return context
+
+# @user_passes_test(lambda u: is_admin(u) or is_organizer(u), login_url='home')
+# def update_category(request, category_id):
+#     category = Category.objects.get(id=category_id)
+#     category_form = CategoryForm(instance=category)
+    
+#     if request.method == "POST":
+#         category_form = CategoryForm(request.POST, instance=category)
         
-        if category_form.is_valid():
-            category_form.save()
-            messages.success(request, "Category updated successfully!")
-            return redirect("home")
-    context = {
-        "category_form": category_form,
-        "layout": layout(request.user),
-        "role": check_role(request.user),
-    }
-    return render(request, "create_category.html", context)
+#         if category_form.is_valid():
+#             category_form.save()
+#             messages.success(request, "Category updated successfully!")
+#             return redirect("home")
+#     context = {
+#         "category_form": category_form,
+#         "layout": layout(request.user),
+#         "role": check_role(request.user),
+#     }
+#     return render(request, "create_category.html", context)
+
+class UpdateCategory(UserPassesTestMixin, UpdateView):
+    model = Category
+    pk_url_kwarg = "category_id"
+    form_class = CategoryForm
+    template_name = "create_category.html"
+    success_url = reverse_lazy("category_list")
+    
+    def test_func(self):
+        return is_admin(self.request.user) or is_organizer(self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["category_form"] = context.get("form")
+        context["layout"] = layout(self.request.user)
+        context["role"] = check_role(self.request.user)
+        return context
 
 
 # Read Operations
-def read_events(request):
-    events = Event.objects.select_related('category').all()
-    categories = Category.objects.all()
+# def read_events(request):
+#     events = Event.objects.select_related('category').all()
+#     categories = Category.objects.all()
     
-    search_query = request.GET.get('search')
-    if search_query:
-        events = events.filter(Q(name__icontains=search_query)|Q(description__icontains=search_query)|Q(location__icontains=search_query))
+#     search_query = request.GET.get('search')
+#     if search_query:
+#         events = events.filter(Q(name__icontains=search_query)|Q(description__icontains=search_query)|Q(location__icontains=search_query))
         
 
-    category_id = request.GET.get('category')
-    if category_id:
-        events = events.filter(category__id=category_id)
+#     category_id = request.GET.get('category')
+#     if category_id:
+#         events = events.filter(category__id=category_id)
     
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
+#     start_date = request.GET.get('start_date')
+#     end_date = request.GET.get('end_date')
     
-    if start_date and end_date:
-        events = events.filter(date__range=[start_date, end_date])
+#     if start_date and end_date:
+#         events = events.filter(date__range=[start_date, end_date])
     
-    context = {
-        "events": events,
-        "categories": categories,
-        "layout": layout(request.user),
-        "role": check_role(request.user),
-    }
-    return render(request, "read_event.html", context)
+#     context = {
+#         "events": events,
+#         "categories": categories,
+#         "layout": layout(request.user),
+#         "role": check_role(request.user),
+#     }
+#     return render(request, "read_event.html", context)
 
-def read_categories(request):
-    categories = Category.objects.all()
-    context = {
-        "categories": categories,
-        "layout": layout(request.user),
-        "role": check_role(request.user),
-    }
-    return render(request, "read_category.html", context)
+class ReadEvents(ListView):
+    model = Event
+    template_name = "read_event.html"
+    context_object_name = "events"
 
+    def get_queryset(self):
+        events = Event.objects.select_related('category').all()
+        search_query = self.request.GET.get('search')
+        if search_query:
+            events = events.filter(Q(name__icontains=search_query)|Q(description__icontains=search_query)|Q(location__icontains=search_query))
+        
+        category_id = self.request.GET.get('category')
+        if category_id:
+            events = events.filter(category__id=category_id)
+        
+        start_date = self.request.GET.get('start_date')
+        end_date = self.request.GET.get('end_date')
+        
+        if start_date and end_date:
+            events = events.filter(date__range=[start_date, end_date])
+        
+        return events
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["categories"] = Category.objects.all()
+        context["layout"] = layout(self.request.user)
+        context["role"] = check_role(self.request.user)
+        return context
+
+# def read_categories(request):
+#     categories = Category.objects.all()
+#     context = {
+#         "categories": categories,
+#         "layout": layout(request.user),
+#         "role": check_role(request.user),
+#     }
+#     return render(request, "read_category.html", context)
+
+class ReadCategories(ListView):
+    model = Category
+    template_name = "read_category.html"
+    context_object_name = "categories"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["layout"] = layout(self.request.user)
+        context["role"] = check_role(self.request.user)
+        return context
 
 def categorycal_events(request, category_id):
     category = Category.objects.get(id=category_id)
