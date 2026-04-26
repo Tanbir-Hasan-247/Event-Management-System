@@ -12,7 +12,7 @@ from django.contrib.auth.models import Group, User
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, DetailView, View
-from django.contrib.auth.mixins import UserPassesTestMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 def home(request):
     return render(request, "home.html")
 
@@ -338,6 +338,9 @@ class EventDetail(DetailView):
     template_name = "event_details.html"
     context_object_name = "event"
     pk_url_kwarg = "event_id"
+    
+    def get_queryset(self):
+        return Event.objects.select_related('category').all()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -346,150 +349,321 @@ class EventDetail(DetailView):
         return context
 
 #Delete Operations
-@user_passes_test(lambda u: is_admin(u) or is_organizer(u), login_url='home')
-def delete_event(request, event_id):
-    event = Event.objects.get(id=event_id)
-    event.delete()
-    messages.success(request, "Event deleted successfully!")
-    return redirect("event_list")
+# @user_passes_test(lambda u: is_admin(u) or is_organizer(u), login_url='home')
+# def delete_event(request, event_id):
+#     event = Event.objects.get(id=event_id)
+#     event.delete()
+#     messages.success(request, "Event deleted successfully!")
+#     return redirect("event_list")
 
-@user_passes_test(lambda u: is_admin(u) or is_organizer(u), login_url='home')
-def delete_category(request, category_id):
-    category = Category.objects.get(id=category_id)
-    category.delete()
-    messages.success(request, "Category deleted successfully!")
-    return redirect("category_list")
+class DeleteEvent(UserPassesTestMixin, DeleteView):
+    model = Event
+    pk_url_kwarg = "event_id"
+    template_name = "confirm_delete.html"
+    success_url = reverse_lazy("event_list")
 
-@login_required
-def dashboard(request):
-    today = timezone.now().date()
+    def test_func(self):
+        return is_admin(self.request.user) or is_organizer(self.request.user)
 
-    events = Event.objects.select_related('category')
-    total_events = events.count()
-    upcoming_events_count = events.filter(date__gt=today).count()
-    past_events_count = events.filter(date__lt=today).count()
-    rsvp_events_count = request.user.rsvp_events.select_related('category').count()
+# @user_passes_test(lambda u: is_admin(u) or is_organizer(u), login_url='home')
+# def delete_category(request, category_id):
+#     category = Category.objects.get(id=category_id)
+#     category.delete()
+#     messages.success(request, "Category deleted successfully!")
+#     return redirect("category_list")
 
-    todays_events = events.filter(date=today)
+class DeleteCategory(UserPassesTestMixin, DeleteView):
+    model = Category
+    pk_url_kwarg = "category_id"
+    template_name = "confirm_delete.html"
+    success_url = reverse_lazy("category_list")
+
+    def test_func(self):
+        return is_admin(self.request.user) or is_organizer(self.request.user)
+
+# @login_required
+# def dashboard(request):
+#     today = timezone.now().date()
+
+#     events = Event.objects.select_related('category')
+#     total_events = events.count()
+#     upcoming_events_count = events.filter(date__gt=today).count()
+#     past_events_count = events.filter(date__lt=today).count()
+#     rsvp_events_count = request.user.rsvp_events.select_related('category').count()
+
+#     todays_events = events.filter(date=today)
    
-    filter_type = request.GET.get('filter')
-    filtered_events = events.order_by('-date')
-    table_title = "All Events"
-    if filter_type == 'upcoming':
-        filtered_events = events.filter(date__gt=today).order_by('date')
-        table_title = "Upcoming Events"
-    elif filter_type == 'past':
-        filtered_events = events.filter(date__lt=today).order_by('-date')
-        table_title = "Past Events"
-    elif filter_type == 'rsvp':
-        filtered_events = request.user.rsvp_events.select_related('category').order_by('-date')
-        table_title = "My RSVPed Events"
-    else:
-        filtered_events = events.order_by('-date')
-        table_title = "All Events"
+#     filter_type = request.GET.get('filter')
+#     filtered_events = events.order_by('-date')
+#     table_title = "All Events"
+#     if filter_type == 'upcoming':
+#         filtered_events = events.filter(date__gt=today).order_by('date')
+#         table_title = "Upcoming Events"
+#     elif filter_type == 'past':
+#         filtered_events = events.filter(date__lt=today).order_by('-date')
+#         table_title = "Past Events"
+#     elif filter_type == 'rsvp':
+#         filtered_events = request.user.rsvp_events.select_related('category').order_by('-date')
+#         table_title = "My RSVPed Events"
+#     else:
+#         filtered_events = events.order_by('-date')
+#         table_title = "All Events"
 
-    context = {
-        'total_events': total_events,
-        'upcoming_events_count': upcoming_events_count,
-        'past_events_count': past_events_count,
-        'rsvp_events_count': rsvp_events_count,
-        'table_title': table_title,
+#     context = {
+#         'total_events': total_events,
+#         'upcoming_events_count': upcoming_events_count,
+#         'past_events_count': past_events_count,
+#         'rsvp_events_count': rsvp_events_count,
+#         'table_title': table_title,
 
-        'todays_events': todays_events,
-        'filtered_events': filtered_events,
-        "layout": layout(request.user),
-        "role": check_role(request.user),
-    }
+#         'todays_events': todays_events,
+#         'filtered_events': filtered_events,
+#         "layout": layout(request.user),
+#         "role": check_role(request.user),
+#     }
 
-    return render(request, 'dashboard.html', context)
+#     return render(request, 'dashboard.html', context)
 
+class Dashboard(LoginRequiredMixin,View):
+    def get(self, request):
+        today = timezone.now().date()
 
-@user_passes_test(is_admin, login_url='home')
-def admin_panel(request):
-    today = timezone.now().date()
+        events = Event.objects.select_related('category')
+        total_events = events.count()
+        upcoming_events_count = events.filter(date__gt=today).count()
+        past_events_count = events.filter(date__lt=today).count()
+        rsvp_events_count = request.user.rsvp_events.select_related('category').count()
 
-    events = Event.objects.select_related('category')
-    total_events = events.count()
-    upcoming_events_count = events.filter(date__gt=today).count()
-    past_events_count = events.filter(date__lt=today).count()
-
-    todays_events = events.filter(date=today)
-   
-    filter_type = request.GET.get('filter')
-    filtered_events = events.order_by('-date')
-    table_title = "All Events"
-    if filter_type == 'upcoming':
-        filtered_events = events.filter(date__gt=today).order_by('date')
-        table_title = "Upcoming Events"
-    elif filter_type == 'past':
-        filtered_events = events.filter(date__lt=today).order_by('-date')
-        table_title = "Past Events"
-    else:
-        filtered_events = events.order_by('-date')
-        table_title = "All Events"
-
-    context = {
-        'total_events': total_events,
-        'upcoming_events_count': upcoming_events_count,
-        'past_events_count': past_events_count,
-        'table_title': table_title,
-
-        'todays_events': todays_events,
-        'filtered_events': filtered_events,
-        "layout": layout(request.user),
-        "role": check_role(request.user),
-    }
-    return render(request, "admin/adminDashboard.html", context)
-
-
-@user_passes_test(is_admin, login_url='home')
-def all_users(request):
-    users = User.objects.prefetch_related('groups').filter(groups__name='Participant').all()
-    group = Group.objects.all()
-    title = "Event Participants"
-    context = {
-        "users": users,
-        "all_groups": group,
-        "title": title,
-        "layout": layout(request.user),
-        "role": check_role(request.user),
-    }
-    return render(request, "admin/read_participant.html", context)
-
-@user_passes_test(is_admin, login_url='home')
-def all_organizers(request):
-    users = User.objects.prefetch_related('groups').filter(groups__name='Organizer').all()
-    group = Group.objects.all()
-    title = "Event Organizers"
-    context = {
-        "users": users,
-        "all_groups": group,
-        "title": title,
-        "role": check_role(request.user),
-        "layout": layout(request.user),
-    }
-    return render(request, "admin/read_participant.html", context)
-
-@user_passes_test(is_admin, login_url='home')
-def create_group(request):
-    form = GroupForm()
-    if request.method == "POST":
-        form = GroupForm(request.POST)
-        if form.is_valid():
-            group = form.save()
-            messages.success(request, "Group created successfully!")
-            return redirect("create_group")
+        todays_events = events.filter(date=today)
     
-    context = {
-        "form": form,
-        "layout": layout(request.user),
-        "role": check_role(request.user),
-    }
-    return render(request, "admin/create_group.html", context)
+        filter_type = request.GET.get('filter')
+        filtered_events = events.order_by('-date')
+        table_title = "All Events"
+        if filter_type == 'upcoming':
+            filtered_events = events.filter(date__gt=today).order_by('date')
+            table_title = "Upcoming Events"
+        elif filter_type == 'past':
+            filtered_events = events.filter(date__lt=today).order_by('-date')
+            table_title = "Past Events"
+        elif filter_type == 'rsvp':
+            filtered_events = request.user.rsvp_events.select_related('category').order_by('-date')
+            table_title = "My RSVPed Events"
+        else:
+            filtered_events = events.order_by('-date')
+            table_title = "All Events"
 
-@user_passes_test(is_admin, login_url='home')
-def assign_user_group(request, user_id):
-    if request.method == 'POST':
+        context = {
+            'total_events': total_events,
+            'upcoming_events_count': upcoming_events_count,
+            'past_events_count': past_events_count,
+            'rsvp_events_count': rsvp_events_count,
+            'table_title': table_title,
+
+            'todays_events': todays_events,
+            'filtered_events': filtered_events,
+            "layout": layout(request.user),
+            "role": check_role(request.user),
+        }
+
+        return render(request, 'dashboard.html', context)
+
+
+# @user_passes_test(is_admin, login_url='home')
+# def admin_panel(request):
+#     today = timezone.now().date()
+
+#     events = Event.objects.select_related('category')
+#     total_events = events.count()
+#     upcoming_events_count = events.filter(date__gt=today).count()
+#     past_events_count = events.filter(date__lt=today).count()
+
+#     todays_events = events.filter(date=today)
+   
+#     filter_type = request.GET.get('filter')
+#     filtered_events = events.order_by('-date')
+#     table_title = "All Events"
+#     if filter_type == 'upcoming':
+#         filtered_events = events.filter(date__gt=today).order_by('date')
+#         table_title = "Upcoming Events"
+#     elif filter_type == 'past':
+#         filtered_events = events.filter(date__lt=today).order_by('-date')
+#         table_title = "Past Events"
+#     else:
+#         filtered_events = events.order_by('-date')
+#         table_title = "All Events"
+
+#     context = {
+#         'total_events': total_events,
+#         'upcoming_events_count': upcoming_events_count,
+#         'past_events_count': past_events_count,
+#         'table_title': table_title,
+
+#         'todays_events': todays_events,
+#         'filtered_events': filtered_events,
+#         "layout": layout(request.user),
+#         "role": check_role(request.user),
+#     }
+#     return render(request, "admin/adminDashboard.html", context)
+
+class AdminPanel(LoginRequiredMixin, UserPassesTestMixin, View):
+    def test_func(self):
+        return is_admin(self.request.user)
+
+    def get(self, request):
+        today = timezone.now().date()
+
+        events = Event.objects.select_related('category')
+        total_events = events.count()
+        upcoming_events_count = events.filter(date__gt=today).count()
+        past_events_count = events.filter(date__lt=today).count()
+
+        todays_events = events.filter(date=today)
+    
+        filter_type = request.GET.get('filter')
+        filtered_events = events.order_by('-date')
+        table_title = "All Events"
+        if filter_type == 'upcoming':
+            filtered_events = events.filter(date__gt=today).order_by('date')
+            table_title = "Upcoming Events"
+        elif filter_type == 'past':
+            filtered_events = events.filter(date__lt=today).order_by('-date')
+            table_title = "Past Events"
+        else:
+            filtered_events = events.order_by('-date')
+            table_title = "All Events"
+
+        context = {
+            'total_events': total_events,
+            'upcoming_events_count': upcoming_events_count,
+            'past_events_count': past_events_count,
+            'table_title': table_title,
+
+            'todays_events': todays_events,
+            'filtered_events': filtered_events,
+            "layout": layout(request.user),
+            "role": check_role(request.user),
+        }
+        return render(request, "admin/adminDashboard.html", context)
+
+
+# @user_passes_test(is_admin, login_url='home')
+# def all_users(request):
+#     users = User.objects.prefetch_related('groups').filter(groups__name='Participant').all()
+#     group = Group.objects.all()
+#     title = "Event Participants"
+#     context = {
+#         "users": users,
+#         "all_groups": group,
+#         "title": title,
+#         "layout": layout(request.user),
+#         "role": check_role(request.user),
+#     }
+#     return render(request, "admin/read_participant.html", context)
+
+class AllUsers(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = User
+    template_name = "admin/read_participant.html"
+    context_object_name = "users"
+
+    def test_func(self):
+        return is_admin(self.request.user)
+
+    def get_queryset(self):
+        return User.objects.prefetch_related('groups').filter(groups__name='Participant').all()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["all_groups"] = Group.objects.all()
+        context["title"] = "Event Participants"
+        context["layout"] = layout(self.request.user)
+        context["role"] = check_role(self.request.user)
+        return context
+
+# @user_passes_test(is_admin, login_url='home')
+# def all_organizers(request):
+#     users = User.objects.prefetch_related('groups').filter(groups__name='Organizer').all()
+#     group = Group.objects.all()
+#     title = "Event Organizers"
+#     context = {
+#         "users": users,
+#         "all_groups": group,
+#         "title": title,
+#         "role": check_role(request.user),
+#         "layout": layout(request.user),
+#     }
+#     return render(request, "admin/read_participant.html", context)
+
+class AllOrganizers(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = User
+    template_name = "admin/read_participant.html"
+    context_object_name = "users"
+
+    def test_func(self):
+        return is_admin(self.request.user)
+
+    def get_queryset(self):
+        return User.objects.prefetch_related('groups').filter(groups__name='Organizer').all()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["all_groups"] = Group.objects.all()
+        context["title"] = "Event Organizers"
+        context["layout"] = layout(self.request.user)
+        context["role"] = check_role(self.request.user)
+        return context
+
+# @user_passes_test(is_admin, login_url='home')
+# def create_group(request):
+#     form = GroupForm()
+#     if request.method == "POST":
+#         form = GroupForm(request.POST)
+#         if form.is_valid():
+#             group = form.save()
+#             messages.success(request, "Group created successfully!")
+#             return redirect("create_group")
+    
+#     context = {
+#         "form": form,
+#         "layout": layout(request.user),
+#         "role": check_role(request.user),
+#     }
+#     return render(request, "admin/create_group.html", context)
+
+class CreateGroup(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    model = Group
+    form_class = GroupForm
+    template_name = "admin/create_group.html"
+    success_url = reverse_lazy("create_group")
+
+    def test_func(self):
+        return is_admin(self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"] = context.get("form")
+        context["layout"] = layout(self.request.user)
+        context["role"] = check_role(self.request.user)
+        return context
+    
+# @user_passes_test(is_admin, login_url='home')
+# def assign_user_group(request, user_id):
+#     if request.method == 'POST':
+#         user = get_object_or_404(User, id=user_id)
+#         group_id = request.POST.get('group_id')
+#         new_group = get_object_or_404(Group, id=group_id)
+        
+#         user.groups.clear()
+#         user.groups.add(new_group)
+        
+#         messages.success(request, f"{user.username} is now assigned to {new_group.name}!")
+        
+#     return redirect('all_participants')
+
+class AssignUserGroup(LoginRequiredMixin, UserPassesTestMixin, View):
+    def test_func(self):
+        return is_admin(self.request.user)
+
+    def post(self, request, user_id):
         user = get_object_or_404(User, id=user_id)
         group_id = request.POST.get('group_id')
         new_group = get_object_or_404(Group, id=group_id)
@@ -499,46 +673,105 @@ def assign_user_group(request, user_id):
         
         messages.success(request, f"{user.username} is now assigned to {new_group.name}!")
         
-    return redirect('all_participants')
+        return redirect('all_participants')
 
-@user_passes_test(is_admin, login_url='home')
-def all_roles_with_permissions(request):
-    group = Group.objects.all()
-    context = {
-        "group": group,
-        "layout": layout(request.user),
-        "role": check_role(request.user),
-    }
-    return render(request, "admin/all_roles_with_permissions.html", context)
+# @user_passes_test(is_admin, login_url='home')
+# def all_roles_with_permissions(request):
+#     group = Group.objects.all()
+#     context = {
+#         "group": group,
+#         "layout": layout(request.user),
+#         "role": check_role(request.user),
+#     }
+#     return render(request, "admin/all_roles_with_permissions.html", context)
+
+class AllRolesWithPermissions(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = Group
+    template_name = "admin/all_roles_with_permissions.html"
+    context_object_name = "group"
+
+    def test_func(self):
+        return is_admin(self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["layout"] = layout(self.request.user)
+        context["role"] = check_role(self.request.user)
+        return context
 
 
 from django.core.mail import send_mail
 from django.conf import settings
 
-@login_required
-def rvsp_events(request, event_id):
-    event = Event.objects.get(id=event_id)
+# @login_required
+# def rvsp_events(request, event_id):
+#     event = Event.objects.get(id=event_id)
 
-    if event.participants.filter(id=request.user.id).exists():
-        subject = "Event Reminder"
-        message = f"Hi {request.user.first_name},\n\nYou are already registered for {event.name} on {event.date}."
-        send_mail(subject, message, settings.EMAIL_HOST_USER, [request.user.email])
+#     if event.participants.filter(id=request.user.id).exists():
+#         subject = "Event Reminder"
+#         message = f"Hi {request.user.first_name},\n\nYou are already registered for {event.name} on {event.date}."
+#         send_mail(subject, message, settings.EMAIL_HOST_USER, [request.user.email])
 
-        messages.warning(request, "You have already RSVPed. Reminder email sent!")
+#         messages.warning(request, "You have already RSVPed. Reminder email sent!")
 
-    else:
-        event.participants.add(request.user)
+#     else:
+#         event.participants.add(request.user)
 
-        subject = "Event RSVP Confirmation"
-        message = f"Hi {request.user.first_name},\n\nYou have successfully RSVP'd for {event.name} on {event.date}."
-        send_mail(subject, message, settings.EMAIL_HOST_USER, [request.user.email])
+#         subject = "Event RSVP Confirmation"
+#         message = f"Hi {request.user.first_name},\n\nYou have successfully RSVP'd for {event.name} on {event.date}."
+#         send_mail(subject, message, settings.EMAIL_HOST_USER, [request.user.email])
 
-        messages.success(request, "You have successfully RSVPed!")
+#         messages.success(request, "You have successfully RSVPed!")
 
-    return redirect("event_detail", event_id=event.id)
+#     return redirect("event_detail", event_id=event.id)
 
-def adminbase(request):
-    context = {
-        "role": check_role(request.user),
-    }
-    return render(request, "admin/adminbase.html", context)
+class RSVPEvents(LoginRequiredMixin, View):
+    def get(self, request, event_id):
+        event = Event.objects.get(id=event_id)
+
+        if event.participants.filter(id=request.user.id).exists():
+            subject = "Event Reminder"
+            message = f"Hi {request.user.first_name},\n\nYou are already registered for {event.name} on {event.date}."
+            send_mail(subject, message, settings.EMAIL_HOST_USER, [request.user.email])
+
+            messages.warning(request, "You have already RSVPed. Reminder email sent!")
+
+        else:
+            event.participants.add(request.user)
+
+            subject = "Event RSVP Confirmation"
+            message = f"Hi {request.user.first_name},\n\nYou have successfully RSVP'd for {event.name} on {event.date}."
+            send_mail(subject, message, settings.EMAIL_HOST_USER, [request.user.email])
+
+            messages.success(request, "You have successfully RSVPed!")
+
+        return redirect("event_detail", event_id=event.id)
+    
+class ParticipantEvents(LoginRequiredMixin, ListView):
+    model = Event
+    template_name = "read_categorycal_events.html"
+    context_object_name = "events"
+
+    def get_queryset(self):
+        self.participant = User.objects.get(id=self.kwargs.get("participant_id"))
+        return self.participant.rsvp_events.select_related('category').all()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["title"] = f"Events for Participant: {self.participant.username}"
+        context["layout"] = layout(self.request.user)
+        context["role"] = check_role(self.request.user)
+        return context
+
+# def adminbase(request):
+#     context = {
+#         "role": check_role(request.user),
+#     }
+#     return render(request, "admin/adminbase.html", context)
+
+class AdminBase(LoginRequiredMixin, View):
+    def get(self, request):
+        context = {
+            "role": check_role(request.user),
+        }
+        return render(request, "admin/adminbase.html", context)
