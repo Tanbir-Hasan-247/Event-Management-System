@@ -262,40 +262,88 @@ class ReadCategories(ListView):
         context["role"] = check_role(self.request.user)
         return context
 
-def categorycal_events(request, category_id):
-    category = Category.objects.get(id=category_id)
-    events = category.events.all()
-    title = f"Events in Category: {category.name}"
+# def categorycal_events(request, category_id):
+#     category = Category.objects.get(id=category_id)
+#     events = category.events.all()
+#     title = f"Events in Category: {category.name}"
     
-    context = {
-        "events": events,
-        "title": title,
-        "layout": layout(request.user),
-        "role": check_role(request.user),
-    }
-    return render(request, "read_categorycal_events.html", context)
+#     context = {
+#         "events": events,
+#         "title": title,
+#         "layout": layout(request.user),
+#         "role": check_role(request.user),
+#     }
+#     return render(request, "read_categorycal_events.html", context)
 
-def participantcal_events(request, participant_id):
-    participant = User.objects.get(id=participant_id)
-    events = participant.rsvp_events.select_related('category').all()
-    title = f"Events for Participant: {participant.username}"
+class CategoryEvents(ListView):
+    model = Event
+    template_name = "read_categorycal_events.html"
+    context_object_name = "events"
+
+    def get_queryset(self):
+        category_id = self.kwargs.get("category_id")
+        return Event.objects.select_related('category').filter(category__id=category_id)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        category_id = self.kwargs.get("category_id")
+        category = Category.objects.get(id=category_id)
+        context["title"] = f"Events in Category: {category.name}"
+        context["layout"] = layout(self.request.user)
+        context["role"] = check_role(self.request.user)
+        return context
+
+
+# def participantcal_events(request, participant_id):
+    # participant = User.objects.get(id=participant_id)
+    # events = participant.rsvp_events.select_related('category').all()
+    # title = f"Events for Participant: {participant.username}"
     
-    context = {
-        "events": events,
-        "title": title,
-        "layout": layout(request.user),
-        "role": check_role(request.user),
-    }
-    return render(request, "read_categorycal_events.html", context)
+    # context = {
+    #     "events": events,
+    #     "title": title,
+    #     "layout": layout(request.user),
+    #     "role": check_role(request.user),
+    # }
+    # return render(request, "read_categorycal_events.html", context)
 
-def event_detail(request, event_id):
-    event = Event.objects.select_related('category').get(id=event_id)
-    context = {
-        "event": event,
-        "layout": layout(request.user),
-        "role": check_role(request.user),
-    }
-    return render(request, "event_details.html", context)
+class ParticipantEvents(ListView):
+    model = Event
+    template_name = "read_categorycal_events.html"
+    context_object_name = "events"
+
+    def get_queryset(self):
+        self.participant = User.objects.get(id=self.kwargs.get("participant_id"))
+        return self.participant.rsvp_events.select_related('category').all()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["title"] = f"Events for Participant: {self.participant.username}"
+        context["layout"] = layout(self.request.user)
+        context["role"] = check_role(self.request.user)
+        return context
+    
+
+# def event_detail(request, event_id):
+#     event = Event.objects.select_related('category').get(id=event_id)
+#     context = {
+#         "event": event,
+#         "layout": layout(request.user),
+#         "role": check_role(request.user),
+#     }
+#     return render(request, "event_details.html", context)
+
+class EventDetail(DetailView):
+    model = Event
+    template_name = "event_details.html"
+    context_object_name = "event"
+    pk_url_kwarg = "event_id"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["layout"] = layout(self.request.user)
+        context["role"] = check_role(self.request.user)
+        return context
 
 #Delete Operations
 @user_passes_test(lambda u: is_admin(u) or is_organizer(u), login_url='home')
